@@ -183,3 +183,6 @@ demo_diffusion_models_generative_AI.ipynb
 *.idx*
 *.ubyte
 
+# Archivos de modelos entrenados
+*.pth
+
