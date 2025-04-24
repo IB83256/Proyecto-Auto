@@ -177,4 +177,9 @@ entorno_proyecto/
 
 *.idx*
 *.ubyte
+data/
+demo_MNIST_diffusion.ipynb
+demo_diffusion_models_generative_AI.ipynb
+*.idx*
+*.ubyte
 
