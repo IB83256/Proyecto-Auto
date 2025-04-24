@@ -174,3 +174,7 @@ cython_debug/
 .pypirc
 
 entorno_proyecto/
+
+*.idx*
+*.ubyte
+
