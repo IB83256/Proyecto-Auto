@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Predictor-Corrector sampler for score-based generative models.
+Predictor-Corrector integrator for stochastic differential equations (SDEs)
 
-Author: Álvaro Duro y Carlos Beti
+Author: [Tu Nombre]
 Date: [Fecha]
 """
 
@@ -10,71 +10,87 @@ from typing import Callable, Union
 import torch
 from torch import Tensor
 
-
-def predictor_corrector_sampler(
-    x_T: Tensor,
+def predictor_corrector_integrator(
+    x_0: Tensor,
     t_0: float,
     t_end: float,
     n_steps: int,
-    score_model: Callable[[Tensor, Tensor], Tensor],
+    drift_coefficient: Callable[[Tensor, Tensor], Tensor],
     diffusion_coefficient: Callable[[Tensor], Tensor],
-    corrector_step_size: float = 0.01,
+    score_function: Callable[[Tensor, Tensor], Tensor],
     n_corrector_steps: int = 1,
-    seed: Union[int, None] = None,
+    corrector_step_size: float = 0.01,
+    seed: Union[int, None] = None
 ) -> tuple[Tensor, Tensor]:
     """
-    Predictor-Corrector integrator using Euler-Maruyama + Langevin correction.
+    Predictor-Corrector integrator for SDEs of the form:
+        dx_t = f(x_t, t) dt + g(t) dW_t
 
     Args:
-        x_T: Initial tensor sampled from prior, shape (B, C, H, W)
-        t_0: Starting time (typically T=1.0)
-        t_end: Ending time (typically close to 0)
-        n_steps: Number of time discretization steps
-        score_model: Callable s(x, t) that estimates the score ∇ log p_t(x)
-        diffusion_coefficient: Function g(t)
-        corrector_step_size: Langevin correction step size
-        n_corrector_steps: Number of corrector steps per time step
-        seed: Optional random seed
+        x_0: Initial tensor (e.g., images), shape (batch_size, n_channels, H, W)
+        t_0: Initial time
+        t_end: Final time
+        n_steps: Number of discretization steps
+        drift_coefficient: Function f(x, t) representing the drift term
+        diffusion_coefficient: Function g(t) representing the diffusion term
+        score_function: Score-based model providing estimates of gradients of log probability
+        n_corrector_steps: Number of corrector (Langevin) steps per time step
+        corrector_step_size: Step size for corrector updates
+        seed: Optional integer seed for reproducibility
 
     Returns:
-        times: Tensor of time points (n_steps + 1,)
-        x_t: Tensor of image evolution over time, shape (B, C, H, W, n_steps + 1)
+        times: Tensor of discretized time points, shape (n_steps + 1,)
+        x_t: Tensor containing the evolution of x over time,
+             shape (*x_0.shape, n_steps + 1)
+
+    Example:
+        >>> import torch
+        >>> x_0 = torch.zeros(2, 1, 4, 4)
+        >>> drift = lambda x, t: torch.zeros_like(x)
+        >>> diffusion = lambda t: torch.ones_like(t)
+        >>> score_fn = lambda x, t: torch.randn_like(x)
+        >>> times, x_t = predictor_corrector_integrator(x_0, t_0=0.0, t_end=1.0, n_steps=5, drift_coefficient=drift, diffusion_coefficient=diffusion, score_function=score_fn, seed=42)
+        >>> x_t.shape
+        torch.Size([2, 1, 4, 4, 6])
     """
+
+    # Set reproducibility if seed is given
     if seed is not None:
         torch.manual_seed(seed)
 
-    device = x_T.device
-    dtype = x_T.dtype
-    B = x_T.shape[0]
+    device = x_0.device
+    dtype = x_0.dtype
 
+    # Create time vector
     times = torch.linspace(t_0, t_end, n_steps + 1, device=device, dtype=dtype)
     dt = times[1] - times[0]
-    predictor_step_size = dt
-    sqrt_corrector_step_size = torch.sqrt(torch.tensor(corrector_step_size, device=device, dtype=dtype))
+    dt_sqrt = torch.sqrt(torch.abs(dt))
 
-    x_t = torch.empty((*x_T.shape, n_steps + 1), dtype=dtype, device=device)
-    x_t[..., 0] = x_T
+    # Initialize tensor to store the evolution of x
+    x_t = torch.empty((*x_0.shape, n_steps + 1), dtype=dtype, device=device)
+    x_t[..., 0] = x_0
+
+    # Sample all noise terms in advance
+    z = torch.randn_like(x_t)
 
     for n, t in enumerate(times[:-1]):
-        t_tensor = torch.full((B,), t.item(), device=device, dtype=dtype)
+        t_tensor = torch.full((x_0.shape[0],), t.item(), device=device, dtype=dtype)
 
-        # Predictor: Euler-Maruyama step
-        g = diffusion_coefficient(t_tensor).view(-1, 1, 1, 1)
-        z = torch.randn_like(x_t[..., n])
-        drift = -g**2 * score_model(x_t[..., n], t_tensor)
+        # Predictor step (Euler-Maruyama)
         x_pred = (
             x_t[..., n]
-            + drift * predictor_step_size
-            + g * torch.sqrt(predictor_step_size) * z
+            + drift_coefficient(x_t[..., n], t_tensor) * dt
+            + diffusion_coefficient(t_tensor).view(-1, 1, 1, 1) * dt_sqrt * z[..., n]
         )
 
-        # Corrector: Langevin dynamics
-        x_corr = x_pred.clone()
+        # Corrector steps (Langevin dynamics guided by the score)
+        x_corr = x_pred
         for _ in range(n_corrector_steps):
             noise = torch.randn_like(x_corr)
-            score = score_model(x_corr, t_tensor)
-            x_corr = x_corr + 0.5 * corrector_step_size * score + sqrt_corrector_step_size * noise
+            grad_logp = score_function(x_corr, t_tensor)
+            x_corr = x_corr + corrector_step_size * grad_logp + torch.sqrt(torch.tensor(2.0 * corrector_step_size, device=device)) * noise
 
+        # Save the corrected x
         x_t[..., n + 1] = x_corr
 
     return times, x_t
