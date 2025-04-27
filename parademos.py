@@ -159,3 +159,66 @@ for epoch in tqdm_epoch:
     tqdm_epoch.set_description('Average Loss: {:5f}'.format(avg_loss / num_items))
 
     torch.save(score_model.state_dict(), 'check_point.pth')
+
+    # Sample from the trained model
+
+
+n_images = 3
+
+check_point = torch.load('check_point.pth', map_location=device)
+score_model.load_state_dict(check_point)
+
+diffusion_coefficient = diffusion_process.diffusion_coefficient
+
+T = 1.0 - 1e-3
+image_T = torch.randn(n_images, 1, 28, 28).to(device)
+
+
+with torch.no_grad():
+    times, synthetic_images_t = predictor_corrector_integrator(
+        image_T,
+        t_0=T,
+        t_end=1.0e-3,
+        n_steps=2000,
+        drift_coefficient=lambda x_t, t: diffusion_process.reverse_drift(x_t, t, score_model),
+        diffusion_coefficient=diffusion_coefficient,
+        score_function=score_model,  
+        n_corrector_steps=10,
+        corrector_step_size=0.0001
+    )
+
+print(type(synthetic_images_t))
+print(synthetic_images_t.shape)
+
+# Sample from the trained model
+
+n_images = 3
+target_class = torch.tensor([0] * n_images).to(device)  # Ejemplo: generar el dígito 7
+score_function = lambda x_t, t: score_model(x_t, t, target_class)
+drift_coefficient = lambda x_t, t: diffusion_process.reverse_drift(x_t, t, lambda x_t_, t_: score_model(x_t_, t_, target_class))
+
+check_point = torch.load('check_point.pth', map_location=device)
+score_model.load_state_dict(check_point)
+
+diffusion_coefficient = diffusion_process.diffusion_coefficient
+
+T = 1.0 - 1e-3
+image_T = torch.randn(n_images, 1, 28, 28).to(device)
+
+
+with torch.no_grad():
+    times, synthetic_images_t = predictor_corrector_integrator(
+        image_T,
+        t_0=T,
+        t_end=1.0e-3,
+        n_steps=2000,
+        drift_coefficient=drift_coefficient,
+        diffusion_coefficient=diffusion_coefficient,
+        score_function=score_function,
+        n_corrector_steps=0,
+        corrector_step_size=0.0001
+    )
+
+
+print(type(synthetic_images_t))
+print(synthetic_images_t.shape)

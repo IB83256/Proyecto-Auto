@@ -33,6 +33,7 @@ class GaussianDiffusionProcess(DiffusionProcess):
         x_0: Tensor,
         eps: float = 1.0e-5,
     ) -> Tensor:
+        
         batch_size = x_0.shape[0]
         t = torch.rand(batch_size, device=x_0.device) * (1.0 - eps) + eps
         z = torch.randn_like(x_0)
@@ -42,6 +43,17 @@ class GaussianDiffusionProcess(DiffusionProcess):
         loss = torch.mean(torch.norm((score * sigma + z), dim=(1, 2, 3), p=2) ** 2)
         return loss
     
+    def loss_function_conditional(self, score_model, x_0, y, eps: float = 1.0e-5) -> torch.Tensor:
+        batch_size = x_0.shape[0]
+        t = torch.rand(batch_size, device=x_0.device) * (1.0 - eps) + eps
+        z = torch.randn_like(x_0)
+        sigma = self.sigma_t(t).view(-1, 1, 1, 1)
+        x_t = x_0 + sigma * z
+        score = score_model(x_t, t, y)
+        loss = torch.mean(torch.norm((score * sigma + z), dim=(1, 2, 3), p=2) ** 2)
+        return loss
+
+
     def reverse_drift(self, x_t: Tensor, t: Tensor, score_model) -> Tensor:
         """
         Computes the reverse-time drift:
