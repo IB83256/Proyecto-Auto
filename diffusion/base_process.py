@@ -6,9 +6,7 @@ Author: Álvaro Duro y Carlos Beti
 """
 
 from typing import Callable
-import torch
 from torch import Tensor
-
 
 class DiffusionProcess:
     def __init__(

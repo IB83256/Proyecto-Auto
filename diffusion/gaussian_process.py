@@ -8,9 +8,7 @@ Author: Álvaro Duro y Carlos Beti
 import torch
 from torch import Tensor
 from typing import Callable
-import numpy as np
 from .base_process import DiffusionProcess
-
 
 class GaussianDiffusionProcess(DiffusionProcess):
     def __init__(
