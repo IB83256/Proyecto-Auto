@@ -1,0 +1,161 @@
+# Sample from the trained model
+
+n_images = 3
+
+check_point = torch.load('check_point.pth', map_location=device)
+score_model.load_state_dict(check_point)
+
+def backward_drift_coefficient(x_t, t, diffusion_coefficient):
+    g = diffusion_coefficient(t).view(-1, 1, 1, 1)
+    return -g**2 * score_model(x_t, t)
+
+diffusion_coefficient = diffusion_process.diffusion_coefficient
+
+T = 1.0
+image_T = torch.randn(n_images, 1, 28, 28).to(device)
+
+
+
+with torch.no_grad():
+    times, synthetic_images_t = predictor_corrector_integrator(
+    image_T,
+    t_0 = T,
+    t_end = 1.0e-3,
+    n_steps=500,
+    drift_coefficient=partial(
+        backward_drift_coefficient,
+        diffusion_coefficient=diffusion_coefficient,
+    ),
+    diffusion_coefficient=diffusion_coefficient,
+    score_function=score_model,  
+    n_corrector_steps = 1,
+    corrector_step_size = 0.01
+
+)
+
+print(type(synthetic_images_t))
+print(synthetic_images_t.shape) 
+
+
+
+from samplers import euler_maruyama_integrator
+import torch
+from noise_schedules import LinearSchedule
+from diffusion import VPProcess
+
+# Crear el noise schedule lineal
+schedule = LinearSchedule(beta_min=0.1, beta_max=20.0)
+
+# Instanciar el proceso de difusión Variance Preserving
+vp_process = VPProcess(noise_schedule=schedule)
+
+# Definir funciones de drift y diffusion desde la clase VPProcess
+def drift(x_t, t):
+    return vp_process.drift_coefficient(x_t, t)
+
+def diffusion(t):
+    return vp_process.diffusion_coefficient(t)
+
+# Parámetros de integración
+t_0 = 0.0
+t_end = 1.0
+n_steps = 501
+
+# Integrar usando Euler-Maruyama
+times, images_t = euler_maruyama_integrator(
+    images_0,
+    t_0,
+    t_end,
+    n_steps,
+    drift_coefficient=drift,
+    diffusion_coefficient=diffusion,
+)
+
+# Mostrar información de salida
+print(type(images_0))
+print(images_0.shape)
+
+print(type(images_t))
+print(images_t.shape)
+
+
+# Train model
+
+from torch.optim import Adam
+import torchvision.transforms as transforms
+from tqdm.notebook import trange
+
+batch_size = 32
+
+data_loader = DataLoader(
+    data_train,
+    batch_size=batch_size,
+    shuffle=True,
+    num_workers=n_threads,
+)
+
+#  [TO DO: Comment each line of code]
+
+learning_rate = 1.0e-3
+optimizer = Adam(score_model.parameters(), lr=learning_rate)
+
+n_epochs =  10
+tqdm_epoch = trange(n_epochs)
+
+for epoch in tqdm_epoch:
+    avg_loss = 0.0
+    num_items = 0
+    for x, y in data_loader:
+        x = x.to(device)
+        loss = diffusion_process.loss_function(score_model, x)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        avg_loss += loss.item() * x.shape[0]
+        num_items += x.shape[0]
+
+    tqdm_epoch.set_description('Average Loss: {:5f}'.format(avg_loss / num_items))
+
+    torch.save(score_model.state_dict(), 'check_point.pth')
+
+
+
+
+# Train model
+
+from torch.optim import Adam
+import torchvision.transforms as transforms
+from tqdm.notebook import trange
+
+batch_size = 32
+
+data_loader = DataLoader(
+    data_train,
+    batch_size=batch_size,
+    shuffle=True,
+    num_workers=n_threads,
+)
+
+#  [TO DO: Comment each line of code]
+
+learning_rate = 1.0e-3
+optimizer = Adam(score_model.parameters(), lr=learning_rate)
+
+n_epochs =  10
+tqdm_epoch = trange(n_epochs)
+
+for epoch in tqdm_epoch:
+    avg_loss = 0.0
+    num_items = 0
+    for x, y in data_loader:
+        x = x.to(device)
+        loss = diffusion_process.loss_function(score_model, x)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        avg_loss += loss.item() * x.shape[0]
+        num_items += x.shape[0]
+
+    tqdm_epoch.set_description('Average Loss: {:5f}'.format(avg_loss / num_items))
+
+    torch.save(score_model.state_dict(), 'check_point.pth')

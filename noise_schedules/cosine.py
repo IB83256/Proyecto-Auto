@@ -34,12 +34,15 @@ class CosineSchedule(NoiseSchedule):
         self.s = s
 
     def alphas_cumprod(self, t: Tensor) -> Tensor:
-        f = lambda u: torch.cos((u + self.s) / (1 + self.s) * np.pi / 2) ** 2
+        f = lambda u: torch.cos((u + self.s)/(1 + self.s)*torch.pi/2)**2
         device = t.device
         return f(t) / f(torch.zeros(1, device=device))
 
     def beta(self, t: Tensor) -> Tensor:
-        return (np.pi / (2 * (1 + self.s))) * torch.tan((t + self.s) / (1 + self.s) * np.pi / 2)
+        pi = torch.tensor(torch.pi, device=t.device)
+        tan_term = (pi / (2 * (1 + self.s))) * torch.tan((t + self.s) / (1 + self.s) * pi / 2)
+        beta = torch.clamp(tan_term, max=0.999)
+        return beta
 
     def integrated_beta(self, t: Tensor) -> Tensor:
         raise NotImplementedError("Cosine schedule does not use integrated beta explicitly.")

@@ -35,7 +35,7 @@ class VPProcess(GaussianDiffusionProcess):
     def __init__(self, noise_schedule: NoiseSchedule):
         self.noise_schedule = noise_schedule
 
-        drift_coefficient = lambda x_t, t: -0.5 * self.beta(t) * x_t
+        drift_coefficient = lambda x_t, t: -0.5 * self.beta(t).view(-1, 1, 1, 1) * x_t
         diffusion_coefficient = lambda t: torch.sqrt(self.beta(t))
 
         def mu_t(x_0, t):

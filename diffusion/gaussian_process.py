@@ -11,6 +11,11 @@ from typing import Callable
 from .base_process import DiffusionProcess
 
 class GaussianDiffusionProcess(DiffusionProcess):
+    """
+    Gaussian Diffusion Process.
+
+    Models both the forward SDE (adding noise) and the reverse-time SDE (sampling by removing noise).
+    """
     def __init__(
         self,
         drift_coefficient: Callable[[Tensor, Tensor], Tensor] = lambda x_t, t: 0.0,
@@ -36,3 +41,21 @@ class GaussianDiffusionProcess(DiffusionProcess):
         score = score_model(x_t, t)
         loss = torch.mean(torch.norm((score * sigma + z), dim=(1, 2, 3), p=2) ** 2)
         return loss
+    
+    def reverse_drift(self, x_t: Tensor, t: Tensor, score_model) -> Tensor:
+        """
+        Computes the reverse-time drift:
+            f_reverse(x, t) = f(x, t) - g(t)^2 * score_model(x, t)
+
+        Args:
+            x_t: Current state tensor.
+            t: Current time tensor.
+            score_model: Function (x_t, t) -> estimated score.
+
+        Returns:
+            Reverse drift tensor.
+        """
+        f_forward = self.drift_coefficient(x_t, t)
+        g = self.diffusion_coefficient(t).view(-1, 1, 1, 1)  
+        score = score_model(x_t, t)
+        return f_forward - g**2 * score

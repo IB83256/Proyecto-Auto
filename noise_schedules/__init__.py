@@ -6,10 +6,12 @@ Author: Álvaro Duro y Carlos Beti
 Date: [Fecha]
 """
 
-from .linear import linear_beta_schedule
-from .cosine import cosine_beta_schedule
+from .linear import LinearSchedule
+from .cosine import CosineSchedule
+from .base_schedule import NoiseSchedule
 
 __all__ = [
-    "linear_beta_schedule",
-    "cosine_beta_schedule",
+    "LinearSchedule",
+    "CosineSchedule",
+    "NoiseSchedule",
 ]
