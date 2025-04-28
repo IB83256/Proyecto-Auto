@@ -30,22 +30,26 @@ class CosineSchedule(NoiseSchedule):
         torch.Size([3])
     """
 
-    def __init__(self, s: float = 0.008):
+    def __init__(self, s: float = 0.008, T: float = 1.0):
         self.s = s
+        self.T = T  # Duración del intervalo de integración
 
     def alphas_cumprod(self, t: Tensor) -> Tensor:
+        t_norm = t / self.T
         f = lambda u: torch.cos((u + self.s)/(1 + self.s)*torch.pi/2)**2
         device = t.device
-        return f(t) / f(torch.zeros(1, device=device))
+        return f(t_norm) / f(torch.zeros(1, device=device))
 
     def beta(self, t: Tensor) -> Tensor:
-        pi = torch.tensor(torch.pi, device=t.device)
-        tan_term = (pi / (2 * (1 + self.s))) * torch.tan((t + self.s) / (1 + self.s) * pi / 2)
+        t_norm = t / self.T
+        pi = torch.pi
+        tan_term = (pi / (2 * (1 + self.s))) * torch.tan((t_norm + self.s) / (1 + self.s) * pi / 2)
         beta = torch.clamp(tan_term, max=0.999)
         return beta
 
     def integrated_beta(self, t: Tensor) -> Tensor:
         raise NotImplementedError("Cosine schedule does not use integrated beta explicitly.")
+
 
 if __name__ == "__main__":
     import doctest

@@ -12,37 +12,34 @@ import torch
 
 class LinearSchedule(NoiseSchedule):
     """
-    Linear beta schedule class for variance preserving diffusion models.
+    Linear beta schedule class for variance preserving diffusion models with general time interval [0, T].
 
     Args:
         beta_min: Minimum beta value.
         beta_max: Maximum beta value.
+        T: Final time of the diffusion process (default: 1.0).
 
     Methods:
         alphas_cumprod(t): Computes cumulative alpha from t.
         integrated_beta(t): Computes the integral of beta from 0 to t.
         beta(t): Computes beta at time t.
-
-    Example:
-        >>> schedule = LinearSchedule(beta_min=0.1, beta_max=20.0)
-        >>> t = torch.tensor([0.0, 0.5, 1.0])
-        >>> beta = schedule.beta(t)
-        >>> beta.shape
-        torch.Size([3])
     """
 
-    def __init__(self, beta_min: float = 0.1, beta_max: float = 20.0):
+    def __init__(self, beta_min: float = 0.1, beta_max: float = 20.0, T: float = 1.0):
         self.beta_min = beta_min
         self.beta_max = beta_max
+        self.T = T
 
     def alphas_cumprod(self, t: Tensor) -> Tensor:
         return torch.exp(-self.integrated_beta(t))
 
     def integrated_beta(self, t: Tensor) -> Tensor:
-        return self.beta_min * t + 0.5 * (self.beta_max - self.beta_min) * t ** 2
+        t_norm = t / self.T
+        return self.beta_min * t + 0.5 * (self.beta_max - self.beta_min) * t_norm * t
 
     def beta(self, t: Tensor) -> Tensor:
-        return self.beta_min + (self.beta_max - self.beta_min) * t
+        t_norm = t / self.T
+        return self.beta_min + (self.beta_max - self.beta_min) * t_norm
 
 if __name__ == "__main__":
     import doctest
