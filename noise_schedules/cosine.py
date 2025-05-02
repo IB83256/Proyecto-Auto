@@ -42,13 +42,34 @@ class CosineSchedule(NoiseSchedule):
 
     def beta(self, t: Tensor) -> Tensor:
         t_norm = t / self.T
-        pi = torch.pi
-        tan_term = (pi / (2 * (1 + self.s))) * torch.tan((t_norm + self.s) / (1 + self.s) * pi / 2)
-        beta = torch.clamp(tan_term, max=0.999)
-        return beta
+        theta = (t_norm + self.s) / (1 + self.s) * torch.pi / 2
+        beta = (torch.pi / (self.T * (1 + self.s))) * torch.tan(theta)
+        return torch.clamp(beta, max=0.999)
 
+    
     def integrated_beta(self, t: Tensor) -> Tensor:
-        raise NotImplementedError("Cosine schedule does not use integrated beta explicitly.")
+        """
+        Approximate the integral of beta(s) ds from 0 to t
+        using the trapezoidal rule.
+
+        Args:
+            t: Tensor of time values (batch_size,)
+
+        Returns:
+            Tensor of shape (batch_size,) with ∫₀ᵗ β(s) ds
+        """
+        num_points = 500  # número de puntos para integrar
+        device = t.device
+        result = []
+
+        for t_i in t:
+            s_vals = torch.linspace(0, t_i, num_points, device=device)
+            beta_vals = self.beta(s_vals)
+            dt = t_i / (num_points - 1)
+            integral = torch.trapz(beta_vals, dx=dt)
+            result.append(integral)
+
+        return torch.stack(result)
 
 
 if __name__ == "__main__":

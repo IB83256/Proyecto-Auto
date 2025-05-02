@@ -10,12 +10,12 @@ from .base_process import DiffusionProcess
 from .gaussian_process import GaussianDiffusionProcess
 from .vp_process import VPProcess
 from .ve_process import VEProcess
-# Cuando implementes subvp, lo añades aquí también
+from .subvp_process import SubVPProcess
 
 __all__ = [
     "DiffusionProcess",
     "GaussianDiffusionProcess",
     "VPProcess",
     "VEProcess",
-    # "SubVPProcess" (cuando lo tengas)
+    "SubVPProcess" 
 ]

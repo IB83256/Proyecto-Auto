@@ -222,3 +222,31 @@ with torch.no_grad():
 
 print(type(synthetic_images_t))
 print(synthetic_images_t.shape)
+
+
+n_images = 3
+
+check_point = torch.load('check_point.pth', map_location=device)
+score_model.load_state_dict(check_point)
+
+diffusion_coefficient = diffusion_process.diffusion_coefficient
+
+T = 1.0 - 1e-3
+image_T = torch.randn(n_images, 1, 28, 28).to(device)
+
+
+with torch.no_grad():
+    times, synthetic_images_t = predictor_corrector_integrator(
+        image_T,
+        t_0=T,
+        t_end=0- 1e-3,
+        n_steps=2000,
+        drift_coefficient=lambda x_t, t: diffusion_process.reverse_drift(x_t, t, score_model),
+        diffusion_coefficient=diffusion_coefficient,
+        score_function=score_model,
+        n_corrector_steps=10,
+        corrector_step_size=0.0001,
+    )
+
+print(type(synthetic_images_t))
+print(synthetic_images_t.shape)

@@ -26,21 +26,43 @@ class GaussianDiffusionProcess(DiffusionProcess):
         super().__init__(drift_coefficient, diffusion_coefficient)
         self.mu_t = mu_t
         self.sigma_t = sigma_t
-
+    
     def loss_function(
         self,
-        score_model,
-        x_0: Tensor,
+        score_model, 
+        x_0: torch.Tensor, 
         eps: float = 1.0e-5,
-    ) -> Tensor:
+    ):
+        """The loss function for training score-based generative models.
+
+        Args:
+            score_model:  A PyTorch model instance that represents a 
+                            time-dependent score-based model.
+        x_0: A mini-batch of training data.    
+        eps: A tolerance value for numerical stability.
+        """
         
+        # Número de muestras en el batch
         batch_size = x_0.shape[0]
+    
+        # (1) Muestreamos tiempos uniformemente en (0, 1)
         t = torch.rand(batch_size, device=x_0.device) * (1.0 - eps) + eps
+    
+        # (2) Muestreamos ruido Gaussiano Z ~ N(0, I)
         z = torch.randn_like(x_0)
-        sigma = self.sigma_t(t).view(-1, 1, 1, 1)
+    
+        # (3) Calculamos sigma(t)
+        sigma = self.sigma_t(t).view(-1,1,1,1)
+    
+        # (4) Generamos x(t) = x_0 + sigma(t) * Z
         x_t = x_0 + sigma * z
+    
+        # (5) Score predicho por la red
         score = score_model(x_t, t)
-        loss = torch.mean(torch.norm((score * sigma + z), dim=(1, 2, 3), p=2) ** 2)
+    
+        # (7) MSE 
+        loss = torch.mean(torch.norm((score*sigma +z ),dim=(1, 2, 3),p = 2)**2)
+
         return loss
     
     def loss_function_conditional(self, score_model, x_0, y, eps: float = 1.0e-5) -> torch.Tensor:
