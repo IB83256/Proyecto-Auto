@@ -20,8 +20,10 @@ def predictor_corrector_integrator(
     score_function: Callable[[Tensor, Tensor], Tensor],
     n_corrector_steps: int = 1,
     corrector_step_size: float = 0.01,
+    mask: Union[Tensor, None] = None,
     seed: Union[int, None] = None
 ) -> tuple[Tensor, Tensor]:
+
     """
     Predictor-Corrector integrator for SDEs of the form:
         dx_t = f(x_t, t) dt + g(t) dW_t
@@ -66,9 +68,17 @@ def predictor_corrector_integrator(
     dt = times[1] - times[0]
     dt_sqrt = torch.sqrt(torch.abs(dt))
 
-    # Initialize tensor to store the evolution of x
+    # Initialize x_t
     x_t = torch.empty((*x_0.shape, n_steps + 1), dtype=dtype, device=device)
-    x_t[..., 0] = x_0
+
+    if mask is None:
+        x_t[..., 0] = x_0
+    else:
+        # Inicializamos con ruido donde no se conoce el valor, y mantenemos x_0 donde sí
+        x_init = torch.randn_like(x_0)
+        x_init = x_init * (1 - mask) + x_0 * mask
+        x_t[..., 0] = x_init
+
 
     # Sample all noise terms in advance
     z = torch.randn_like(x_t)

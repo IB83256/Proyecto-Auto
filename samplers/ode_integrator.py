@@ -16,6 +16,7 @@ def euler_ode_integrator(
     t_end: float,
     n_steps: int,
     drift_coefficient: Callable[[Tensor, Tensor], Tensor],
+    mask: Tensor | None = None,
 ) -> tuple[Tensor, Tensor]:
     """
     Deterministic Euler integrator for ODEs of the form:
@@ -48,8 +49,18 @@ def euler_ode_integrator(
     times = torch.linspace(t_0, t_end, n_steps + 1, device=device, dtype=dtype)
     dt = times[1] - times[0]
 
-    x_t = torch.empty((*x_0.shape, n_steps + 1), device=device, dtype=dtype)
-    x_t[..., 0] = x_0
+    
+    # Initialize x_t
+    x_t = torch.empty((*x_0.shape, n_steps + 1), dtype=dtype, device=device)
+
+    if mask is None:
+        x_t[..., 0] = x_0
+    else:
+        # Inicializamos con ruido donde no se conoce el valor, y mantenemos x_0 donde sí
+        x_init = torch.randn_like(x_0)
+        x_init = x_init * (1 - mask) + x_0 * mask
+        x_t[..., 0] = x_init
+
 
     for n, t in enumerate(times[:-1]):
         t_tensor = torch.full((x_0.shape[0],), t.item(), device=device, dtype=dtype)

@@ -17,6 +17,7 @@ def euler_maruyama_integrator(
     n_steps: int,  
     drift_coefficient: Callable[[Tensor, Tensor], Tensor],
     diffusion_coefficient: Callable[[Tensor], Tensor],
+    mask: Union[Tensor, None] = None,
     seed: Union[int, None] = None
 ) -> tuple[Tensor, Tensor]:
     """
@@ -60,9 +61,18 @@ def euler_maruyama_integrator(
     dt = times[1] - times[0]
     dt_sqrt = torch.sqrt(torch.abs(dt))
 
-    # Initialize tensor to store the evolution of x
+    
+    # Initialize x_t
     x_t = torch.empty((*x_0.shape, n_steps + 1), dtype=dtype, device=device)
-    x_t[..., 0] = x_0
+
+    if mask is None:
+        x_t[..., 0] = x_0
+    else:
+        # Inicializamos con ruido donde no se conoce el valor, y mantenemos x_0 donde sí
+        x_init = torch.randn_like(x_0)
+        x_init = x_init * (1 - mask) + x_0 * mask
+        x_t[..., 0] = x_init
+
 
     # Sample all noise terms in advance
     z = torch.randn_like(x_t)
