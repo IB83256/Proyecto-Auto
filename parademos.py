@@ -250,3 +250,30 @@ with torch.no_grad():
 
 print(type(synthetic_images_t))
 print(synthetic_images_t.shape)
+
+
+import matplotlib.pyplot as plt
+# Crear instancia
+schedule = CosineSchedule()
+
+# Definir malla de tiempo (resolución reducida)
+t_vals = torch.linspace(0.001, 1.0, 100)
+
+# Varianza aproximada
+approx_sigma = torch.sqrt(1 - schedule.alphas_cumprod(t_vals))
+
+# Varianza exacta (con integración)
+integrated_beta = schedule.integrated_beta(t_vals)
+exact_sigma = torch.sqrt(1 - torch.exp(-integrated_beta))
+
+# Graficar comparación
+plt.figure(figsize=(8, 5))
+plt.plot(t_vals.numpy(), approx_sigma.numpy(), label=r"$\sqrt{1 - \bar{\alpha}(t)}$ (aproximado)")
+plt.plot(t_vals.numpy(), exact_sigma.numpy(), label=r"$\sqrt{1 - e^{-\int_0^t \beta(s)ds}}$ (exacto)", linestyle="--")
+plt.title("Comparación de varianza: aproximación vs. integral exacta")
+plt.xlabel("t")
+plt.ylabel(r"$\sigma(t)$")
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()

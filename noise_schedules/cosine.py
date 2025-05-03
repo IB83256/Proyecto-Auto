@@ -44,7 +44,8 @@ class CosineSchedule(NoiseSchedule):
         t_norm = t / self.T
         theta = (t_norm + self.s) / (1 + self.s) * torch.pi / 2
         beta = (torch.pi / (self.T * (1 + self.s))) * torch.tan(theta)
-        return torch.clamp(beta, max=0.999)
+        return torch.clamp(beta, min=0.0, max=0.999)
+
 
     
     def integrated_beta(self, t: Tensor) -> Tensor:
