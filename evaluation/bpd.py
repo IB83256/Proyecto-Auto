@@ -35,7 +35,7 @@ def compute_bpd(x_0: torch.Tensor,
     score = score_model(x_t, t)
 
     # (5) Estimador de logp(x_0) basado en el score-matching
-    loss = torch.mean(torch.norm(score * sigma + z, dim=(1, 2, 3))**2)
+    loss = torch.mean((score * sigma + z).pow(2).sum(dim=(1, 2, 3)))
 
     # (6) Bits por dimensión = logp / (ln(2) * n_dim)
     n_dim = x_0[0].numel()

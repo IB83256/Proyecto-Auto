@@ -37,7 +37,7 @@ class Dense(nn.Module):
 class ScoreNet(nn.Module):
   """A time-dependent score-based model built upon U-Net architecture."""
 
-  def __init__(self, marginal_prob_std, channels=[32, 64, 128, 256], embed_dim=256):
+  def __init__(self, marginal_prob_std, in_channels=1, channels=[32, 64, 128, 256], embed_dim=256):
     """Initialize a time-dependent score-based network.
 
     Args:
@@ -53,7 +53,7 @@ class ScoreNet(nn.Module):
         nn.Linear(embed_dim, embed_dim)
     )
     # Encoding layers where the resolution decreases
-    self.conv1 = nn.Conv2d(1, channels[0], 3, stride=1, bias=False)
+    self.conv1 = nn.Conv2d(in_channels, channels[0], 3, stride=1, bias=False)
     self.dense1 = Dense(embed_dim, channels[0])
     self.gnorm1 = nn.GroupNorm(4, num_channels=channels[0])
     self.conv2 = nn.Conv2d(channels[0], channels[1], 3, stride=2, bias=False)
@@ -76,7 +76,7 @@ class ScoreNet(nn.Module):
     self.tconv2 = nn.ConvTranspose2d(channels[1] + channels[1], channels[0], 3, stride=2, bias=False, output_padding=1)    
     self.dense7 = Dense(embed_dim, channels[0])
     self.tgnorm2 = nn.GroupNorm(32, num_channels=channels[0])
-    self.tconv1 = nn.ConvTranspose2d(channels[0] + channels[0], 1, 3, stride=1)
+    self.tconv1 = nn.ConvTranspose2d(channels[0] + channels[0], in_channels, 3, stride=1)
     
     # The swish activation function
     self.act = lambda x: x * torch.sigmoid(x)

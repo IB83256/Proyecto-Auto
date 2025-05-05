@@ -1,35 +1,56 @@
+# -*- coding: utf-8 -*-
+"""
+Compute Inception Score using torchvision's official InceptionV3 API (modern version).
+
+Author: Álvaro Duro y Carlos Beti
+Date: 2025-05-05
+"""
+
 import torch
 import torch.nn.functional as F
-from torchvision.models import inception_v3
-from torchvision import transforms
+from torchvision.models import inception_v3, Inception_V3_Weights
 from typing import Tuple
 import numpy as np
 
-def preprocess_images(images: torch.Tensor) -> torch.Tensor:
-    if images.shape[1] == 1:
-        images = images.repeat(1, 3, 1, 1)
-    resize = transforms.Resize((299, 299))
-    return resize(images)
-
-def compute_inception_score(images: torch.Tensor,
-                             device: str = "cuda",
-                             splits: int = 10) -> Tuple[float, float]:
+def preprocess_images(images: torch.Tensor, transform) -> torch.Tensor:
     """
-    Calcula el Inception Score (IS) para un conjunto de imágenes generadas.
-
+    Resize and normalize images to fit InceptionV3 input.
+    
     Args:
-        images: Tensor (N, C, H, W) con valores en [0, 1]
-        device: 'cuda' o 'cpu'
-        splits: número de particiones para estimar la varianza
+        images: Tensor (N, C, H, W) with values in [0, 1]
+        transform: Transform pipeline from Inception_V3_Weights.DEFAULT.transforms()
 
     Returns:
-        IS promedio y desviación estándar
+        Preprocessed tensor
     """
-    model = inception_v3(pretrained=True, transform_input=False, aux_logits=False)
+    if images.shape[1] == 1:
+        images = images.repeat(1, 3, 1, 1)
+    return transform(images)
+
+def compute_inception_score(
+    images: torch.Tensor,
+    device: str = "cuda",
+    splits: int = 10
+) -> Tuple[float, float]:
+    """
+    Compute Inception Score (IS) for a batch of generated images.
+
+    Args:
+        images: Tensor of shape (N, C, H, W) in [0, 1]
+        device: 'cuda' or 'cpu'
+        splits: Number of splits for IS variance estimation
+
+    Returns:
+        Tuple (mean IS, std IS)
+    """
+    weights = Inception_V3_Weights.DEFAULT
+    model = inception_v3(weights=weights)
     model.to(device)
     model.eval()
 
-    images = preprocess_images(images)
+    # Load and apply preprocessing transform
+    transform = weights.transforms()
+    images = preprocess_images(images, transform)
     images = images.to(device)
 
     with torch.no_grad():
@@ -52,4 +73,3 @@ def compute_inception_score(images: torch.Tensor,
         scores.append(np.exp(np.mean(kl_sum)))
 
     return float(np.mean(scores)), float(np.std(scores))
-

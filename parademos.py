@@ -277,3 +277,32 @@ plt.grid(True)
 plt.legend()
 plt.tight_layout()
 plt.show()
+
+
+
+n_images = 3
+
+mask = torch.randint(0, 2, (n_images, 1, 28, 28), device=device, dtype=torch.float32)
+check_point = torch.load('check_point.pth', map_location=device)
+score_model.load_state_dict(check_point)
+
+diffusion_coefficient = diffusion_process.diffusion_coefficient
+
+T = 1.0 - 1e-3
+image_T = torch.zeros(n_images, 1, 28, 28).to(device)
+T_tensor = torch.tensor([T], device=device)
+
+with torch.no_grad():
+    times, synthetic_images_t = euler_maruyama_integrator(
+        image_T,
+        t_0=T,
+        t_end= 0,
+        n_steps= 5000,
+        drift_coefficient=lambda x_t, t: diffusion_process.reverse_drift(x_t, t, score_model),
+        diffusion_coefficient=diffusion_coefficient,
+        prior = (lambda x_t, T_tensor: diffusion_process.mu_t(x_t, T_tensor), 
+                 lambda T_tensor: diffusion_process.sigma_t(T_tensor))
+   )
+
+print(type(synthetic_images_t))
+print(synthetic_images_t.shape)
