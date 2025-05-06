@@ -44,7 +44,7 @@ class GaussianDiffusionProcess(DiffusionProcess):
         
         # Número de muestras en el batch
         batch_size = x_0.shape[0]
-    
+        
         # (1) Muestreamos tiempos uniformemente en (0, 1)
         t = torch.rand(batch_size, device=x_0.device) * (1.0 - eps) + eps
     

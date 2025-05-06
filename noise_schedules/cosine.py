@@ -46,7 +46,6 @@ class CosineSchedule(NoiseSchedule):
         beta = (torch.pi / (self.T * (1 + self.s))) * torch.tan(theta)
         return torch.clamp(beta, min=0.0, max=0.999)
 
-
     
     def integrated_beta(self, t: Tensor) -> Tensor:
         """
