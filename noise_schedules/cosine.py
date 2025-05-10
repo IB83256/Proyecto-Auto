@@ -38,7 +38,10 @@ class CosineSchedule(NoiseSchedule):
         t_norm = t / self.T
         f = lambda u: torch.cos((u + self.s)/(1 + self.s)*torch.pi/2)**2
         device = t.device
-        return f(t_norm) / f(torch.zeros(1, device=device))
+        alpha_bar = f(t_norm) / f(torch.zeros(1, device=device))
+        eps = 1e-8
+        alpha_bar = torch.clamp(alpha_bar, min=eps)
+        return alpha_bar
 
     def beta(self, t: Tensor) -> Tensor:
         t_norm = t / self.T
@@ -70,6 +73,9 @@ class CosineSchedule(NoiseSchedule):
             result.append(integral)
 
         return torch.stack(result)
+    
+    def integrated_beta_analytical(self, t: Tensor) -> Tensor:
+        return -torch.log(self.alphas_cumprod(t))
 
 
 if __name__ == "__main__":

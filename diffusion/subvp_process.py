@@ -34,9 +34,8 @@ class SubVPProcess(GaussianDiffusionProcess):
         torch.Size([2])
     """
 
-    def __init__(self, noise_schedule: NoiseSchedule, use_precomputed_sigma: bool = False):
+    def __init__(self, noise_schedule: NoiseSchedule):
         self.noise_schedule = noise_schedule
-        self.use_precomputed_sigma = use_precomputed_sigma
 
         drift_coefficient = lambda x_t, t: -0.5 * self.beta(t).view(-1, 1, 1, 1) * x_t
         diffusion_coefficient = lambda t: torch.sqrt(
@@ -45,17 +44,12 @@ class SubVPProcess(GaussianDiffusionProcess):
 
         def mu_t(x_0, t):
             return x_0 * torch.sqrt(self.noise_schedule.alphas_cumprod(t))
-
-        if use_precomputed_sigma:
-            self._t_vals, self._sigma_vals = self._generate_sigma_table(self.noise_schedule)
-
-            def sigma_t(t):
-                t_cpu = t.detach().cpu().numpy()
-                interpolated = np.interp(t_cpu, self._t_vals, self._sigma_vals)
-                return torch.tensor(interpolated, dtype=torch.float32, device=t.device)
-        else:
-            def sigma_t(t):
-                return torch.sqrt(1.0 - self.noise_schedule.alphas_cumprod(t))
+        
+        self._t_vals, self._sigma_vals = self._generate_sigma_table(self.noise_schedule)
+        def sigma_t(t):
+            t_cpu = t.detach().cpu().numpy()
+            interpolated = np.interp(t_cpu, self._t_vals, self._sigma_vals)
+            return torch.tensor(interpolated, dtype=torch.float32, device=t.device)
 
         super().__init__(
             drift_coefficient=drift_coefficient,

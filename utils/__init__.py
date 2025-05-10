@@ -5,6 +5,7 @@ from .visualization_color import (
     plot_image_evolution_color,
     animation_images_color,
 )
+from .sampling_utils import sample_initial_latents
 
 __all__ = [
     "plot_image_grid",
@@ -14,4 +15,5 @@ __all__ = [
     "plot_image_grid_color",
     "plot_image_evolution_color",
     "animation_images_color",
+    "sample_initial_latents",
 ]
