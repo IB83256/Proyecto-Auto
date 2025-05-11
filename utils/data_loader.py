@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Simple data loader for MNIST and CIFAR-10 with optional class filtering and custom transforms.
+Data loader for MNIST and CIFAR-10 with optional class filtering and custom transforms.
 
 Author: Álvaro Duro y Carlos Beti
 Date: 2025-05-05

@@ -13,6 +13,7 @@ from typing import Tuple
 import numpy as np
 
 def preprocess_images(images: torch.Tensor, transform) -> torch.Tensor:
+
     """
     Resize and normalize images to fit InceptionV3 input.
     
@@ -23,6 +24,7 @@ def preprocess_images(images: torch.Tensor, transform) -> torch.Tensor:
     Returns:
         Preprocessed tensor
     """
+
     if images.shape[1] == 1:
         images = images.repeat(1, 3, 1, 1)
     return transform(images)
@@ -32,6 +34,7 @@ def compute_inception_score(
     device: str = "cuda",
     splits: int = 10
 ) -> Tuple[float, float]:
+    
     """
     Compute Inception Score (IS) for a batch of generated images.
 
@@ -43,6 +46,7 @@ def compute_inception_score(
     Returns:
         Tuple (mean IS, std IS)
     """
+    
     weights = Inception_V3_Weights.DEFAULT
     model = inception_v3(weights=weights)
     model.to(device)

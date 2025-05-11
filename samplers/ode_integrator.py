@@ -3,7 +3,7 @@
 Deterministic ODE integrator using Euler method for probability flow ODE.
 
 Author: Álvaro Duro y Carlos Beti
-Date: [Fecha]
+Date: [2025-05-3]
 """
 
 from typing import Callable
@@ -64,7 +64,10 @@ def euler_ode_integrator(
 
     for n, t in enumerate(times[:-1]):
         t_tensor = torch.full((x_0.shape[0],), t.item(), device=device, dtype=dtype)
-        x_t[..., n + 1] = x_t[..., n] + drift_coefficient(x_t[..., n], t_tensor) * dt
+        x_next = x_t[..., n] + drift_coefficient(x_t[..., n], t_tensor) * dt
+        if mask is not None:
+            x_next = x_next * (1 - mask) + x_0 * mask
+        x_t[..., n + 1] = x_next
 
     return times, x_t
 

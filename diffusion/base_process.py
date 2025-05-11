@@ -3,6 +3,7 @@
 Base class for diffusion processes.
 
 Author: Álvaro Duro y Carlos Beti
+Date: 2025-04-28
 """
 
 from typing import Callable

@@ -2,8 +2,8 @@
 """
 Sub-Variance Preserving (SubVP) diffusion process.
 
-Author: [Tu Nombre]
-Date: [Fecha]
+Author: Álvaro Duro y Carlos Beti
+Date: 2025-04-28
 """
 
 import torch
@@ -43,10 +43,30 @@ class SubVPProcess(GaussianDiffusionProcess):
         )
 
         def mu_t(x_0, t):
+
+            """
+            Computes the drift term for the SubVP process.
+            Args:
+                x_0 (Tensor): Initial state tensor.
+                t (Tensor): Time tensor.
+            Returns:
+                Tensor: Drift term for the SubVP process.
+            """
+
             return x_0 * torch.sqrt(self.noise_schedule.alphas_cumprod(t))
         
         self._t_vals, self._sigma_vals = self._generate_sigma_table(self.noise_schedule)
+
         def sigma_t(t):
+            
+            """
+            Computes the sigma value for a given time t using precomputed values.
+            Args:
+                t (Tensor): Time tensor.
+            Returns:
+                Tensor: Sigma value for the given time.
+            """
+
             t_cpu = t.detach().cpu().numpy()
             interpolated = np.interp(t_cpu, self._t_vals, self._sigma_vals)
             return torch.tensor(interpolated, dtype=torch.float32, device=t.device)
@@ -59,9 +79,27 @@ class SubVPProcess(GaussianDiffusionProcess):
         )
 
     def beta(self, t: Tensor) -> Tensor:
+        """
+        Computes the beta value for a given time t.
+        Args:
+            t (Tensor): Time tensor.
+        Returns:
+            Tensor: Beta value for the given time.
+        """
+
         return self.noise_schedule.beta(t)
 
     def _generate_sigma_table(self, schedule, T=1.0, num_points=1000):
+        """
+        Generates a table of sigma values for the SubVP process.
+        Args:
+            schedule (NoiseSchedule): The noise schedule to use.
+            T (float): The maximum time value.
+            num_points (int): Number of points in the table.
+        Returns:
+            tuple: Tuple of numpy arrays (t_vals, sigma_vals).
+        """
+
         t_vals = torch.linspace(0, T, num_points)
         sigma_vals = []
 

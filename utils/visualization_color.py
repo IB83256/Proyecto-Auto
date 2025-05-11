@@ -43,6 +43,8 @@ def plot_image_grid_color(
         pad_value (float): Padding value.
         normalize (bool): Normalize images for display.
         axis_on_off (str): "on" or "off" to show/hide axes.
+    Returns:
+        fig, ax: Figure and axes objects.
     """
     grid = make_grid(
         images, 
@@ -72,6 +74,8 @@ def plot_image_evolution_color(
         n_images (int): Number of images to show.
         n_intermediate_steps (ArrayLike): Time indices to display.
         figsize (tuple): Figure size.
+    Returns:
+        fig, axs: Figure and axes objects.
     """
     fig, axs = plt.subplots(n_images, len(n_intermediate_steps), figsize=figsize)
 

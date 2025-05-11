@@ -3,7 +3,7 @@
 Euler-Maruyama integrator for stochastic differential equations (SDEs)
 
 Author: Álvaro Duro y Carlos Beti
-Date: [Fecha]
+Date: [2025-05-3]
 """
 
 from typing import Callable, Union
@@ -46,6 +46,13 @@ def euler_maruyama_integrator(
         >>> times, x_t = euler_maruyama_integrator(x_0, t_0=0.0, t_end=1.0, n_steps=5, drift_coefficient=drift, diffusion_coefficient=diffusion, seed=42)
         >>> x_t.shape
         torch.Size([2, 1, 4, 4, 6])
+        >>> x_0 = torch.ones(1, 1, 2, 2)
+        >>> mask = torch.tensor([[[[1, 0], [0, 1]]]], dtype=torch.float32)
+        >>> drift = lambda x, t: torch.zeros_like(x)
+        >>> diffusion = lambda t: torch.ones_like(t)
+        >>> _, x_t = euler_maruyama_integrator(x_0, 0.0, 1.0, 1, drift, diffusion, mask=mask, seed=0)
+        >>> torch.allclose(x_t[..., 0] * mask, x_t[..., 1] * mask)
+        True
     """
     
     # Set reproducibility if seed is given
@@ -81,16 +88,23 @@ def euler_maruyama_integrator(
     for n, t in enumerate(times[:-1]):
         t_tensor = torch.full((x_0.shape[0],), t.item(), device=device, dtype=dtype)
 
-        x_t[..., n + 1] = (
+        x_next = (
             x_t[..., n]
             + drift_coefficient(x_t[..., n], t_tensor) * dt
             + diffusion_coefficient(t_tensor).view(-1, 1, 1, 1)
-              * dt_sqrt
-              * z[..., n]
+            * dt_sqrt
+            * z[..., n]
         )
+
+        # Mantener fijos los valores donde mask == 1
+        if mask is not None:
+            x_next = x_next * (1 - mask) + x_0 * mask
+
+        x_t[..., n + 1] = x_next
 
     return times, x_t
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    failures, tests = doctest.testmod()
+    print(f"Doctest completado: {tests} pruebas, {failures} errores.")

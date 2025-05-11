@@ -3,7 +3,7 @@
 Exponential integrator for stochastic differential equations (SDEs)
 
 Author: Álvaro Duro y Carlos Beti
-Date: [Fecha]
+Date: [2025-05-3]
 """
 
 from typing import Callable, Union
@@ -80,7 +80,10 @@ def exponential_integrator(
         decay = torch.exp(-A_t * dt)
         increment = g_t ** 2 * score * (1 - decay) / A_t.clamp(min=1e-6)
 
-        x_t[..., n + 1] = decay * x_t[..., n] + increment
+        x_next = decay * x_t[..., n] + increment
+        if mask is not None:
+            x_next = x_next * (1 - mask) + x_0 * mask
+        x_t[..., n + 1] = x_next
 
     return times, x_t
 

@@ -33,7 +33,22 @@ def plot_image_grid(
     cmap: Colormap = "gray",
     normalize: bool = False,
     axis_on_off: bool = "off",  
- ):
+    ):
+    """
+    Display a grid of images using matplotlib.
+    Args:
+        images (Tensor): List or batch of image tensors (C, H, W).
+        figsize (tuple): Figure size in inches.
+        n_rows (int): Number of rows in the grid.
+        n_cols (int): Number of columns in the grid.
+        padding (int): Padding between images.
+        pad_value (float): Padding value.
+        cmap (Colormap): Colormap for grayscale images.
+        normalize (bool): Normalize images for display.
+        axis_on_off (str): "on" or "off" to show/hide axes.
+    Returns:
+        fig, ax: Figure and axes objects.
+    """
 
     grid = make_grid(
         images, 
@@ -57,7 +72,20 @@ def plot_image_evolution(
     n_intermediate_steps: ArrayLike,
     figsize: tuple,
     cmap: Colormap = "gray",
-):
+    ):
+
+    """
+    Display the temporal evolution of several images side by side.
+    Args:
+        images (Tensor): Tensor of shape (N, C, H, W, T).
+        n_images (int): Number of images to show.
+        n_intermediate_steps (ArrayLike): Time indices to display.
+        figsize (tuple): Figure size.
+        cmap (Colormap): Colormap for grayscale images.
+    Returns:
+        fig, axs: Figure and axes objects.
+    """
+
     fig, axs = plt.subplots(
         n_images, 
         len(n_intermediate_steps), 
@@ -78,6 +106,15 @@ def animation_images(
         interval,
         figsize,
     ): 
+    """
+    Create an animation from the temporal evolution of a single image.
+    Args:
+        images_t (ndarray): Array of shape (H, W, C, T).
+        interval (int): Delay between frames in milliseconds.
+        figsize (tuple): Figure size.
+    Returns:
+        fig, ax, animation object
+    """
     _, _, n_frames = np.shape(images_t)
 
     # Create a figure and axes.  

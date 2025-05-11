@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Conditional Score Net
+ScoreNetConditional: time- and class-conditional score network for generative diffusion models.
 
-Author: Adapted by [Tu Nombre]
-Date: [Fecha]
+Author: Álvaro Duro y Carlos Beti
+Date: 2025-04-25
 """
 
 import torch

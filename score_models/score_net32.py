@@ -1,5 +1,10 @@
-# new.py
-# Red neuronal ScoreNet modificada para funcionar correctamente con entrada de tamaño 32x32
+# -*- coding: utf-8 -*-
+"""
+ScoreNet32: U-Net-based score model for 32x32 images in diffusion-based generative models.
+
+Author: Álvaro Duro y Carlos Beti
+Date: 2025-04-25
+"""
 
 import torch
 import torch.nn as nn

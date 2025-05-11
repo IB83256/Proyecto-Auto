@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Score Net
+ScoreNet architecture for time-dependent score-based generative modeling.
 
 Author: Álvaro Duro y Carlos Beti
-Date: [Fecha]
+Date: 2025-04-25
 """
 
 import torch

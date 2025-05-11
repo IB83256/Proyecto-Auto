@@ -3,6 +3,7 @@
 Gaussian diffusion process.
 
 Author: Álvaro Duro y Carlos Beti
+Date: 2025-04-28
 """
 
 import torch
@@ -11,11 +12,13 @@ from typing import Callable
 from .base_process import DiffusionProcess
 
 class GaussianDiffusionProcess(DiffusionProcess):
+
     """
     Gaussian Diffusion Process.
 
     Models both the forward SDE (adding noise) and the reverse-time SDE (sampling by removing noise).
     """
+
     def __init__(
         self,
         drift_coefficient: Callable[[Tensor, Tensor], Tensor] = lambda x_t, t: 0.0,
@@ -66,6 +69,17 @@ class GaussianDiffusionProcess(DiffusionProcess):
         return loss
     
     def loss_function_conditional(self, score_model, x_0, y, eps: float = 1.0e-5) -> torch.Tensor:
+
+        """
+        The loss function for training conditional score-based generative models.
+        Args:
+            score_model: A PyTorch model instance that represents a 
+                            time-dependent score-based model.
+            x_0: A mini-batch of training data.
+            y: Conditional input (e.g., class labels).
+            eps: A tolerance value for numerical stability.
+        """
+
         batch_size = x_0.shape[0]
         t = torch.rand(batch_size, device=x_0.device) * (1.0 - eps) + eps
         z = torch.randn_like(x_0)
@@ -77,6 +91,7 @@ class GaussianDiffusionProcess(DiffusionProcess):
 
 
     def reverse_drift(self, x_t: Tensor, t: Tensor, score_model) -> Tensor:
+
         """
         Computes the reverse-time drift:
             f_reverse(x, t) = f(x, t) - g(t)^2 * score_model(x, t)
@@ -89,6 +104,7 @@ class GaussianDiffusionProcess(DiffusionProcess):
         Returns:
             Reverse drift tensor.
         """
+        
         f_forward = self.drift_coefficient(x_t, t)
         g = self.diffusion_coefficient(t).view(-1, 1, 1, 1)  
         score = score_model(x_t, t)

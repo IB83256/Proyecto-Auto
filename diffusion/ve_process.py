@@ -3,7 +3,7 @@
 Variance Exploding (VE) diffusion process.
 
 Author: Álvaro Duro y Carlos Beti
-Date: [Fecha]
+Date: 2025-04-28
 """
 
 import torch

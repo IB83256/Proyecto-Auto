@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+Utility function to sample initial latent tensors for diffusion-based generation.
+
+Author: Álvaro Duro y Carlos Beti  
+Date: 2025-05-11
+"""
+
 import torch
 from typing import Tuple
 

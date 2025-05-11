@@ -3,7 +3,7 @@
 Variance Preserving (VP) diffusion process.
 
 Author: Álvaro Duro y Carlos Beti
-Date: [Fecha]
+Date: 2025-04-28
 """
 
 import torch
@@ -42,17 +42,46 @@ class VPProcess(GaussianDiffusionProcess):
         diffusion_coefficient = lambda t: torch.sqrt(self.beta(t))
 
         def mu_t(x_0, t):
+
+            """
+            Mean function for the reverse-time SDE.
+            Args:
+                x_0: Initial state.
+                t: Time variable.
+            Returns:
+                Mean of the reverse-time SDE.
+            """
+
             return x_0 * torch.sqrt(self.noise_schedule.alphas_cumprod(t))
 
         if use_precomputed_sigma:
             self._t_vals, self._sigma_vals = self._generate_sigma_table(self.noise_schedule)
 
             def sigma_t(t):
+
+                """
+                Sigma function for the reverse-time SDE.
+                Args:
+                    t: Time variable.
+                Returns:
+                    Sigma of the reverse-time SDE.
+                """
+
                 t_cpu = t.detach().cpu().numpy()
                 interpolated = np.interp(t_cpu, self._t_vals, self._sigma_vals)
                 return torch.tensor(interpolated, dtype=torch.float32, device=t.device)
+            
         else:
             def sigma_t(t):
+
+                """
+                Sigma function for the reverse-time SDE.
+                Args:
+                    t: Time variable.
+                Returns:
+                    Sigma of the reverse-time SDE.
+                """
+
                 return torch.sqrt(1.0 - self.noise_schedule.alphas_cumprod(t))
 
         super().__init__(
@@ -63,15 +92,29 @@ class VPProcess(GaussianDiffusionProcess):
         )
 
     def beta(self, t: Tensor) -> Tensor:
+        
         """
         Beta(t) computed from the noise schedule.
 
         Returns:
             Beta(t) values.
         """
+
         return self.noise_schedule.beta(t)
 
     def _generate_sigma_table(self, schedule, T=1.0, num_points=1000):
+
+        """
+        Generate a table of sigma values for the reverse-time SDE.
+        Args:
+            schedule: Noise schedule instance.
+            T: Maximum time value.
+            num_points: Number of points in the table.
+        Returns:
+            t_vals: Time values.
+            sigma_vals: Corresponding sigma values.
+        """
+
         t_vals = torch.linspace(0, T, num_points)
         sigma_vals = []
 

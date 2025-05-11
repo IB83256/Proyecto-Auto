@@ -2,8 +2,8 @@
 """
 Predictor-Corrector integrator for stochastic differential equations (SDEs)
 
-Author: [Tu Nombre]
-Date: [Fecha]
+Author: Álvaro Duro y Carlos Beti
+Date: [2025-05-3]
 """
 
 from typing import Callable, Union
@@ -74,7 +74,6 @@ def predictor_corrector_integrator(
     if mask is None:
         x_t[..., 0] = x_0
     else:
-        # Inicializamos con ruido donde no se conoce el valor, y mantenemos x_0 donde sí
         x_init = torch.randn_like(x_0)
         x_init = x_init * (1 - mask) + x_0 * mask
         x_t[..., 0] = x_init
@@ -100,7 +99,9 @@ def predictor_corrector_integrator(
             grad_logp = score_function(x_corr, t_tensor)
             x_corr = x_corr + corrector_step_size * grad_logp + torch.sqrt(torch.tensor(2.0 * corrector_step_size, device=device)) * noise
 
-        # Save the corrected x
+        if mask is not None:
+            x_corr = x_corr * (1 - mask) + x_0 * mask
+
         x_t[..., n + 1] = x_corr
 
     return times, x_t
